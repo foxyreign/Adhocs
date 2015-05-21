@@ -1,0 +1,418 @@
+---
+title: "Applied Machine Learning"
+author: "Adrian Cuyugan | Information Analytics, GAMBI"
+output:
+  pdf_document:
+    fig_caption: yes
+    fig_width: 7
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+subtitle: Text Retrieval, Association Rules and Decision Tree Learning using R
+email: acuyugan@csc.com
+---
+
+------
+
+# Introduction
+
+Usually, Machine Learning stops after you understand how the algorithm runs. Data Mining, on the other, is the real-life application of how these complex algorithms is put into practice with very noisy data - recognizing any patterns, discovering outliers and estimating coefficients which and can later be developed to produce accurate predictions.
+
+# Scope
+
+## Techniques
+
+This document assumes that you have basic knowledge on the following subjects:
+
+1. **Information Retrieval** - the lesson stops at text retrieval since the data is often offline and does not necessarily require a contant query function, $f(q,d)$. For this activity, [tm](http://cran.r-project.org/web/packages/tm/tm.pdf) package is used to create a corpus and build the sparse matrix. Also, bag of words is used to construct our sparse matrix using the raw term frequency count for the association rules and a binary-term frequency weighting for decision tree learning.
+$$VSM(q,d)=\sum_{i=1}^{n}x_{1}y_{1}...+...x_{n}y_{n}$$
+
+2. **Association Rules** - finding frequent patterns based on the text corpus we have built from tm. [arules](http://cran.r-project.org/web/packages/arules/arules.pdf) and [arulesViz](http://cran.r-project.org/web/packages/arulesViz/arulesViz.pdf) are usedd for this. Also, [Gephi](http://gephi.github.io/) visualizes the network of rules created from the Apriori algorithm. *Corpus* is a latin word which is a collection of plain text that can be read by the computer when doing Natural Language Processing - linguistics, building sparse matrix, frequency count, etc.
+
+3. **Decision Tree** - the simplest Classification and Regression Tree (CART) algorithm computes for entropy based the response variable that we set, *sentiment*. Remember that entropy is:
+$$E=-\sum_{i=1}^{k}\frac{C_{i}}{n}log_{2}\frac{C_{i}}{n}$$
+[rpart](http://cran.r-project.org/web/packages/rpart/rpart.pdf) builds CART and estimates the model because it contains additional features like cross-validation within training set. Also, [rattle](http://cran.r-project.org/web/packages/rattle/rattle.pdf) is used to visualize the tree. 
+
+For beginners, **rattle** is another data mining tool in R which has a GUI if you are not yet familiar with R coding. 
+
+**Warning**: There are so many data analysts who can use the tool but does not know the algorithm behind it. This is a danger zone because you can interpret the results incorrectly.
+
+## Before starting
+
+You can use `?help` to search what are the description and available parameters that you can use in this example. For example, if you want to know what does `head()` do, type `?head` in   R console.
+
+The scripts are coded as simple as possible with attached comments so that you can understand what happens within each line of code.
+
+The scripts do not include `install.packages()` as it assumes that you have already installed the packages. If you have not, please refer to the above techniques as the names of packages are highlighted with their corresponding documentation from CRAN directory.
+
+# Data 
+
+## Source and Goal
+
+A current knowledge-based competition (bragging rights award) is being held at [Kaggle](https://www.kaggle.com). One of the available data set we could is [Google's Word2Vec's](https://www.kaggle.com/c/word2vec-nlp-tutorial). For this exercise, Natural Language Processing (parsing of words) is not done because it requires further understanding on the subject matter, only bag of words.
+
+Although model evaluation is not discussed (though I highly suggest that you make further reading on this), model accuracy and other quantitative measures are included. There is a big difference between building the model and interpreting the results than doing a prediction that leads to prescribing recommendation as these models are tested against another source of data set which is usually the testing set and/or cross-validation set.
+
+## Bag of Words
+
+As discussed, *bag of words* will be used to create the vector of words based on all 25,000 movie reviews. These are also labelled so that we can calculate the estimates of probability of a word producing a positive or negative review. Sampling was also done to produce the association rules as it requires more memory to run the algorithm.
+
+## Data fields
+
+1. **id** - Unique ID of each review. This will be excluded from the dataset but is very helpful in identifying the unique records of review. `rowname()` function in R accomplishes this task.
+2. **sentiment** - The response variable. This is the sentiment of the review; 1 for positive reviews and 0 for negative reviews. We will be dropping this when we're doing unsupervised learning.
+3. **review** - This is a free-form text field where the users wrote their reviews. This will be converted in to a *Document Term Matrix* as a result of the text retrieval process.
+
+# Text Retrieval
+
+## Loading the dataset
+
+The CSV file is downloaded for offline use so that this document can be generated faster. The data set could be saved into the working directory. 
+
+You can check your current working using `getwd()` or manually set it using `setwd()`. For easier viewing of the codes, C drive is used as a working directory.
+
+```{r Load the dataset, warning=FALSE}
+train <- read.csv("C://popcorn-train.csv", head = T, sep = ",") # Load data set
+
+rownames(train) <- train$id # Assigns the ID as row identifier
+train <- train[,2:3] # Subsets only Sentiment and Comments
+train$sentiment <- factor(train$sentiment, 
+                          levels = c(1,0), 
+                          labels = c("Pos", "Neg")) # Converts 0 and 1 into categories
+table(train$sentiment) # Count of records per sentiment
+```
+
+After loading the data set into R environment, **id** variable is assigned as the row identifier then, **id** variable is dropped since it has already been attached. Since R automatically recognizes **sentiment** as a numerical variable, this is changed to categorical by using the `factor()` function. 
+
+Note that the proportion of Positive and Negative reviews are equal.
+
+## Building the corpus
+
+The corpus could be built from a data frame or a vector format. This example uses data frame since the CSV have been loaded as a data frame. 
+
+Each line of code converts the corpus into its respective transformation function. For more advanced control of parameter, please refer to `?tm_map`.
+
+```{r Build the corpus, warning=FALSE, message=FALSE}
+# Prepare corpus
+require(tm)
+keyword <- as.data.frame(train$review)
+keyword <- Corpus(DataframeSource(keyword)) # Creates corpus
+keyword <- tm_map(keyword, removeWords, stopwords(kind = "english")) # Removes stop words
+keyword <- tm_map(keyword, stemDocument, language = "porter") # Applies porter stemming
+keyword <- tm_map(keyword, stripWhitespace) # Removes whitespace
+keyword <- tm_map(keyword, content_transformer(tolower)) # Converts to lowercase
+keyword <- tm_map(keyword, removePunctuation) # Removes punctuation marks
+keyword <- tm_map(keyword, removeNumbers) # Removes numbers
+```
+
+```{r Raw term frequency, warning=FALSE}
+# Raw Term Frequency
+keyword.term <- DocumentTermMatrix(keyword) # Creates a sparse matrix
+keyword.term # Checks for how many terms were produced
+```
+
+There are $102,984$ terms produced by the algorithm. In Information Retrieval, all of these could be included in the model but since it built a very large matrix, dropping sparsed terms that barely have frequency count in the matrix is done to minimize computational load.
+
+## Sparsity
+
+Use `removeSparseTerms` to remove low frequency count terms.
+
+```{r Sparsity, warning=FALSE}
+keyword.term <- removeSparseTerms(keyword.term, sparse = 0.9)
+keyword.term # Checks for sparsity
+```
+
+After sparsing, non-essential terms is minimizedto almost $130$. Although this is still a lot of variables that CART would handle, based on a data mining analyst's judgement, this could still be adjusted to < 0.90 which would lessen the bag of words/variables included in the final model.
+
+As CART requires a response variable, the document term matrix is combined with the sentiment vector.
+
+```{r Matrix, warning=FALSE}
+keyword.matrix <- as.data.frame.matrix(keyword.term) # Converts to data frame matrix
+keyword.matrix <- cbind(keyword.matrix, sentiment = train$sentiment) # Combines response
+rownames(keyword.matrix) <- row.names(train) # Applies row identifier
+head(keyword.matrix[150:170,118:127])# Previews the combined data frame
+```
+
+# Association Rules
+
+## Negative reviews
+
+For this activity, only the negative reviews are used to look for frequent patterns. Note that when the matrix is built, raw term frequency is used; the values of the matrix would be totally different if TF-IDF weighting is selected.
+
+## Randomg sampling
+
+Building models take a lot of memory resources and when you hit the ceiling, your computer will definitely crash. To minimize the computational load, the negative reviews is sampled without replacement to 5,000 records.
+
+```{r Negative reviews, warning=FALSE}
+popcorn.neg <- subset(keyword.matrix, sentiment == "Neg") # Subsets negative reviews
+popcorn.neg <- popcorn.neg[, !(colnames(popcorn.neg) %in% "sentiment")] # Drops response
+
+# Random sampling
+set.seed(14344) # For reproducability
+popcorn.neg <- popcorn.neg[sample(1:nrow(popcorn.neg), 5000, replace=FALSE),] # Samples
+popcorn.neg <- as.matrix(popcorn.neg) # Converts data frame to matrix
+```
+
+For the results to be fully reproducible, `set.seed()` is used so that you generate the resampling function, the same records are selected.
+
+## A Priori algorithm
+One of the most common algoritms in doing association rules is a priori. 
+
+Before running the function, the data set needs to be converted from matrix/data frame into a transactions class. For example:
+
+ID | Transactions/Bag of Words
+---|-------------------------------------------------------------:
+1  | example, film, interested, just, like, look, movie, scene, will
+2  | because, beyond, director, movie, know, like, movie, want
+3  | because, better, forget, get, know, look, movie, not, will, work
+4  | better, interested, movie, same, something, work
+
+```{r Transaction, warning=FALSE, message=FALSE}
+require(arules)
+popcorn.neg <- as(object = popcorn.neg, Class = "transactions") # Converts to transaction
+popcorn.neg
+```
+
+After sampling, we would have a reproducible random sample of 5,000 records with 127 bag of words but in a transactions matrix format like above.
+
+```{r apriori, warning=FALSE}
+neg.arules <- apriori(popcorn.neg, parameter=list(support=0.1, conf=0.1)) # Runs algorithm
+neg.arules <- sort(neg.arules, decreasing=T, by="lift") # Sorts based on lift values
+```
+
+The $minsup$ (*relative support*) and $minconf$ (*conditional probability*) values totally depend on the analyst's judgement. Also, expertise in the domain helps. Confidence is computed as follows:
+$$conf(X\Rightarrow Y)=\frac{sup(X\cup Y)}{sup(x)} = P(Y|X) = \frac{P(Y\cap X)}{P(X)}$$
+
+Find time to look at the output of the model. Based on the $minsup = 10\%$ and $minconf = 10\%$, there are 3,099 rules that were discovered. The $minlen$ could also be tweaked. 
+
+Then, the rules are sorted based on the magnitude of lift values. Lift is computed as:
+$$lift(X,Y)=\frac{conf(X\Rightarrow Y)}{sup(Y)}=\frac{sup(X\cup Y)}{sup(X)*sup(Y)}$$
+
+## Pruning
+One property of frequent patterns is the downward closure where an itemset subset is also frequent if the parent itemset is also frequent. Pruning resolves this to remove ambiguity in the rules. 
+
+```{r Pruning, warning=FALSE}
+neg.prune <- is.subset(x = neg.arules, y = neg.arules) # Finds subsets
+neg.prune[lower.tri(x = neg.prune, diag = TRUE)] <- NA # Discards lower triangle of matrix
+neg.redundant <- colSums(neg.prune, na.rm = TRUE) >= 1 # Computes for sums of terms
+neg.prune <- neg.arules[!neg.redundant] # Removes redundancies based on subsets
+
+# Converts rules into data frame
+# elements is a sub-class of the rule, just like subsetting
+neg.arules.df = data.frame(
+  lhs = labels(lhs(neg.prune))$elements,
+  rhs = labels(rhs(neg.prune))$elements, 
+  neg.prune@quality)
+
+head(neg.arules.df, 20) # Views top 20 rules based on lift
+neg.prune # Total rules after pruning
+```
+
+You can use `inspect()` to view the rules from the arules package. Unfortunately, since tm package is loaded in the environment and tm uses this function for a different purpose, this masks `inspect()` from arules package. That's why the rules are converted into a data frame so that it can be easily exported or viewed.
+
+There are a total of 1,249 rules after pruning.
+
+Going back to the top 20 rules, assume interpretations of patterns found by the a priori algorithm.
+
+## Custom stopwords
+
+Now, the goal is to construct associations based on the rules found. As the rules that merit high lift values do not make sense, *just, the, really*, these can be added to a list of custom stop words. Then, another run of pattern mining could be done to find more meaningful words.  For this exercise, let's assume that these words make sense to construct meaningful assumptions or **if** $\Rightarrow$ **then** statements.
+
+Another approach is to use TF-IDF because common words such as *movi* and *movie* score low using this weighting. Remember that a normalized TF-IDF is computed as:
+$$IDF_{TF}=log[\frac{(M+1)}{k}]$$
+
+## Visualization
+
+The first 40 rules ranked by the magnitude of the lift value are visualized to show their association. The size of the bubbles is the $support$ and the color density of it is the $lift$. 
+
+Precision is set to show to tenth decimal and cex is a numerical value giving the amount by which plotting text and symbols should be magnified relative to the default.
+
+```{r Items and itemsets, warning=FALSE, message=FALSE, fig.cap="Items and itemsets"}
+require(arulesViz)
+par(mfrow=c(1,2)) # Displays two plots in one graphics
+plot(head(neg.prune,40), method="graph",
+     control=list(type="items", precision=1, cex=.6, 
+                  main="Negative Reviews Items")) # Plots items rules
+plot(head(neg.prune,40), method="graph", 
+     control=list(type="itemsets", precision=1, cex=.6, 
+                  main="Negative Reviews Itemsets")) # Plots itemsets
+par(mfrow=c(1,1)) # Resets graphic device
+```
+
+Using some basic understanding in graph theory (which is another topic - centrality, degrees, clustering, etc), the words could be clustered based on their association with one another. I would let you interpret the graphs for deeper understanding.
+
+Another approach is to perform community modularity clustering based on all rules found in the model. [Gephi](http://gephi.github.io/) is particularly effective in this and it is open-source. Figure 2 is an example.
+
+Basic NLP could be performed by just looking for patterns using *syntatic parsing* (nouns vs verbs) compared with positive reviews. By parsing the bag of words, more advanced techniques such as *Latent Dirichlet Allocation* to perform [Topic Modeling](https://cpsievert.shinyapps.io/newsgroup/) coudl be done. This is very helpful in classifying text specially when analyst's domain expertise is very limited.
+
+```{r Text Network Analysis, warning=FALSE, fig.cap="Text Network Analysis using Gephi", echo=FALSE}
+require(png, quietly = T)
+require(grid, quietly = T)
+tna <- readPNG("C://PopCorn Neg.png")
+grid.raster(tna)
+```
+
+# Decision Tree Learning
+
+## Most frequent words
+
+As mentioned, a typical CART is a greedy algorithm that prefers to look for lower entropy in certain variables that contain higher proportion compared to the rest. Another option before building the model is to look at the most frequent words that are found from the term matrix.
+
+```{r Most frequent words, warning=FALSE}
+findFreqTerms(keyword.term, lowfreq = 5000) # Which words are most frequent?
+```
+
+## Bit-vector weighting
+Assume that you are not familiar with the domain (analyzing movie reviews from forum, for this case), all of the the variables could be used as predictor. 
+
+```{r Bit-vector weighting, warning=FALSE}
+keyword.binary <- weightBin(keyword.term) # Applies binary transformation
+keyword.binary <- as.data.frame.matrix(keyword.binary) # Converts to data frame
+keyword.binary <- cbind(keyword.binary, sentiment = train$sentiment) # Combines response
+keyword.binary <- as.data.frame(sapply(keyword.binary, 
+                                       FUN = as.factor)) # Converts columns to categorical
+rownames(keyword.binary) <- row.names(train) # Applies unique ID
+```
+
+To further simplify the model building, bit-vector weighting is used. As the matrix contains 1 and 0, all predictors are converted to categorical variables to signify missing and present.
+
+## Divide train and testing set
+
+Using complex algorithm to perform descriptive statistics tends to be useless if this cannot be used to predict future state. The simplest way to test accuracy of the model is divide the data set into two: training and test sets. 
+
+Typically, it is divided into 80-20 splits.
+
+```{r Train/test set, warning=FALSE}
+set.seed(14344) # For reproducibility 
+split <- sample(seq_len(nrow(keyword.binary)), # Counts records from 1 to n
+                size = 0.8 * nrow(keyword.binary), # Computes for 80% for training set
+                replace = FALSE)
+
+popcorn.train <- keyword.binary[split, ] # Creates training set
+popcorn.test <- keyword.binary[-split, ] # Created testing set
+```
+
+Other methods like bootstrapping and k-fold validations could be used to make sure that the model is iteratively tested with the lowest standard error as possible.
+
+## Build and visualize tree
+
+```{r Build tree, warning=FALSE, message=FALSE}
+require(rpart)
+require(rattle)
+popcorn.tree <- rpart(formula = sentiment ~ ., # tests all predictors against response
+                      data = popcorn.train, # From the training set
+                      method = "class", # Tells model it is a classification tree
+                      parms = list(split = "information"), # Uses information gain
+                      model = T) # Retains model information
+```
+
+The line that indicates "*" denotes a terminal node of the tree (i.e., a leaf node - the tree is not split any further at that node). The legend is also printed. I highly recommend that you interpret the results based on the output with the visualized tree. You can start from the root (top-down approach) or from the leaf (bottom-up approach.)
+
+Information gain is used to a control parameter when the algorithm converged. This is represented as:
+$$IG=E_{\mu}(T)-E_{\mu}(T,a)$$
+
+```{r CP, warning=FALSE}
+# Prints nodes and leaves
+print(popcorn.tree)
+
+layout(matrix(c(1,2,3,4), nrow = 1, ncol = 2, byrow = TRUE), 
+       widths=c(2.5,2)) 
+
+# Plots the model
+fancyRpartPlot(model = popcorn.tree, 
+               main = NULL, 
+               sub = NULL) 
+
+# Plots variable importance
+barplot(popcorn.tree$variable.importance, 
+        cex.names = 0.5, 
+        sub = "Variable Importance") 
+popcorn.tree$variable.importance
+
+par(mfrow=c(1,1)) # Resets graphic device layout
+```
+
+## Complexity parameter
+
+The complexity parameter $\alpha$ specifies how the cost of a tree $C(T)$ is penalized by the number of terminal nodes $\left | T \right |$, resulting in a regularized cost $C\alpha(T)$. In a nutshell the misclassification error = root node error * standard error of lowest CP.
+
+This is represented as:
+$$C \alpha (T) = C(T) + \alpha \left | T \right |$$
+$$0.4996 * 0.66783 = 0.3336479$$
+
+```{r Complexity parameter, warning=FALSE}
+printcp(popcorn.tree) # Prints CP
+```
+
+More statistics are available in `summary(popcorn.tree)`. 
+
+## Model evaluation
+```{r Model evaluation, warning=FALSE}
+popcorn.prediction <- predict(object = popcorn.tree, # Tests model
+                              newdata = popcorn.test, # with Testing set
+                              type = "class") # Tells it is a classification prediction
+
+# Build binary classification confusion matrix
+popcorn.confusion <- table(Actual = popcorn.test$sentiment, 
+                           Predicted = popcorn.prediction)
+
+tp <- popcorn.confusion[1,1] # True Positive
+tn <- popcorn.confusion[2,2] # True Negative
+fp <- popcorn.confusion[2,1] # False Positive
+fn <- popcorn.confusion[1,2] # False Negative
+n <- sum(popcorn.confusion) # Total records of testing set
+
+popcorn.accuracy <- (tp + tn) / n # Accuracy rate = 66.78%
+popcorn.error <- (fp + fn) / n # Error rate = 33.22%
+popcorn.precision <- tp / (tp + fp) # Precision/Sensitivity = 69.50%
+popcorn.recall <- tp / (tp + fn) # Recall/Specificity = 60.21%
+popcorn.f1 <- 2 * popcorn.precision * popcorn.recall / (popcorn.precision + popcorn.recall)
+popcorn.oddsratio <- (tp * tn) / (fp * fn) # Odds ratio = 4 folds
+```
+
+# Citations
+
+R Core Team (2015). _R: A Language and Environment for Statistical Computing_. R
+Foundation for Statistical Computing, Vienna, Austria. <URL: http://www.R-project.org/>.
+
+Xie Y (2015). _knitr: A General-Purpose Package for Dynamic Report Generation in R_. R
+package version 1.10, <URL: http://yihui.name/knitr/>.
+
+Xie Y (2013). _Dynamic Documents with R and knitr_. Chapman and Hall/CRC, Boca Raton,
+Florida. ISBN 978-1482203530, <URL: http://yihui.name/knitr/>.
+
+Xie Y (2014). “knitr: A Comprehensive Tool for Reproducible Research in R.” In Stodden
+V, Leisch F and Peng RD (eds.), _Implementing Reproducible Computational Research_.
+Chapman and Hall/CRC. ISBN 978-1466561595, <URL:
+http://www.crcpress.com/product/isbn/9781466561595>.
+
+Hahsler M, Buchta C, Gruen B and Hornik K (2014). _arules: Mining Association Rules and
+Frequent Itemsets_. R package version 1.1-6, <URL:
+http://CRAN.R-project.org/package=arules>.
+
+Hahsler M, Gruen B and Hornik K (2005). “arules - A Computational Environment for Mining
+Association Rules and Frequent Item Sets.” _Journal of Statistical Software_, *14*(15),
+pp. 1-25. ISSN 1548-7660, <URL: http://www.jstatsoft.org/v14/i15/>.
+
+Hahsler M and Chelluboina S (2014). _arulesViz: Visualizing Association Rules and
+Frequent Itemsets_. R package version 1.0-0, <URL:
+http://CRAN.R-project.org/package=arulesViz>.
+
+Boettiger C (????). _knitcitations: Citations for knitr markdown files_. R package
+version 1.0.5, <URL: https://github.com/cboettig/knitcitations>.
+
+Therneau T, Atkinson B and Ripley B (2015). _rpart: Recursive Partitioning and
+Regression Trees_. R package version 4.1-9, <URL:
+http://CRAN.R-project.org/package=rpart>.
+
+Williams GJ (2011). _Data Mining with Rattle and R: The art of excavating data for
+knowledge discovery_, series Use R! Springer. <URL:
+http://www.amazon.com/gp/product/1441998896/ref=as_li_qf_sp_asin_tl?ie=UTF8&tag=togaware-20&linkCode=as2&camp=217145&creative=399373&creativeASIN=1441998896>.
+
+Feinerer I and Hornik K (2014). _tm: Text Mining Package_. R package version 0.6, <URL:
+http://CRAN.R-project.org/package=tm>.
+
+Feinerer I, Hornik K and Meyer D (2008). “Text Mining Infrastructure in R.” _Journal of
+Statistical Software_, *25*(5), pp. 1-54. <URL: http://www.jstatsoft.org/v25/i05/>.
+
+Bastian M., Heymann S., Jacomy M. (2009). Gephi: an open source software for exploring and manipulating networks. International AAAI Conference on Weblogs and Social Media.
