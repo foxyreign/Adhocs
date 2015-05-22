@@ -5,6 +5,9 @@ require(rpart)
 require(rattle)
 
 # Data set
+df.online <- download.file(url = "https://raw.githubusercontent.com/foxyreign/Adhocs/master/Jobstreet.csv",
+                           destfile = "Jobstreet.csv")
+
 df <- read.csv('Jobstreet.csv', head=T, sep=",") # Load dataset
 df <- na.omit(df) # Exclude missing data
 
@@ -12,8 +15,8 @@ summary(df) # Summarize
 
 # Categorize education variable
 df$Education <- factor(df$Education, levels = c(1,2,3,4), 
-                       labels=(c("Secondary Sch", "Prof Degree", 
-                                 "Bach Degree", "Post Grad Dip")))
+                       labels=(c("Secondary Sch", "Bach Degree", 
+                                 "Post Grad Dip", "Prof Degree")))
 
 # Bin years of experience
 df$Experience.Group <- ifelse(df$Experience < 3, "3 Years", 
@@ -31,6 +34,8 @@ ggplot(df, aes(x=factor(0), y=Expected.Salary, fill=Experience.Group)) +
         axis.ticks.x=element_blank(),
         legend.position="bottom")
 
+t.test(Expected.Salary ~ Position, paired = FALSE, data = df)
+
 # Plot scatter plos
 ggplot(df, aes(x=Experience, y=Expected.Salary)) + 
   geom_point(aes(col=Experience.Group)) + 
@@ -39,11 +44,11 @@ ggplot(df, aes(x=Experience, y=Expected.Salary)) +
   theme(legend.position="bottom")
 
 # Estimate coefficients of linear regression model
-summary(lm(Expected.Salary ~ Experience + Position-1, data=df))
+summary(lm(Expected.Salary ~ Experience + Position - 1, data=df))
 
 # Diagnose LM
 par(mfrow=c(1,2))
-plot(lm(Expected.Salary ~ Experience + Position-1, data=df), c(1,2))
+plot(lm(Expected.Salary ~ Experience + Position, data=df), c(1,2))
 par(mfrow=c(1,1))
 
 # CART
