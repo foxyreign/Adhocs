@@ -3,7 +3,10 @@ Title: "Data Mining and Scientist Salary Estimates in the Philippines"
 author: "Adrian Cuyugan"
 output:
   pdf_document:
+<<<<<<< HEAD
     fig_caption: yes
+=======
+>>>>>>> b0a1a51cfa0b64d410ce9a86ff915fe96bbf75ad
     toc: yes
   html_document:
     fig_caption: yes

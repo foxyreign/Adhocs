@@ -100,7 +100,11 @@ ggplot(df, aes(x=factor(0), y=Expected.Salary, fill=Experience.Group)) +
         legend.position="bottom")
 ```
 
+<<<<<<< HEAD
 ![Distribution of Expected Salaries](Jobstreet_files/figure-html/Distribution-1.png) 
+=======
+<img src="Jobstreet_files/figure-html/Distribution-1.png" title="Distribution of Expected Salaries" alt="Distribution of Expected Salaries" style="display: block; margin: auto;" />
+>>>>>>> b0a1a51cfa0b64d410ce9a86ff915fe96bbf75ad
 
 ```r
 # T-test
@@ -178,7 +182,11 @@ ggplot(df, aes(x=Experience, y=Expected.Salary)) +
   theme(legend.position="bottom")
 ```
 
+<<<<<<< HEAD
 ![Regression and Diagnostics](Jobstreet_files/figure-html/Regression-1.png) 
+=======
+<img src="Jobstreet_files/figure-html/Regression-1.png" title="Regression and Diagnostics" alt="Regression and Diagnostics" style="display: block; margin: auto;" />
+>>>>>>> b0a1a51cfa0b64d410ce9a86ff915fe96bbf75ad
 
 ```r
 # Diagnose LM
@@ -186,7 +194,11 @@ par(mfrow=c(1,2))
 plot(lm(Expected.Salary ~ Experience + Position-1, data=df), c(1,2))
 ```
 
+<<<<<<< HEAD
 ![Regression and Diagnostics](Jobstreet_files/figure-html/Regression-2.png) 
+=======
+<img src="Jobstreet_files/figure-html/Regression-2.png" title="Regression and Diagnostics" alt="Regression and Diagnostics" style="display: block; margin: auto;" />
+>>>>>>> b0a1a51cfa0b64d410ce9a86ff915fe96bbf75ad
 
 # CART
 
@@ -212,7 +224,11 @@ barplot(cart$variable.importance,
 fancyRpartPlot(cart, main=NULL, sub=NULL)
 ```
 
+<<<<<<< HEAD
 ![Decision Tree using CART and Variable Importance](Jobstreet_files/figure-html/CART-1.png) 
+=======
+<img src="Jobstreet_files/figure-html/CART-1.png" title="Decision Tree using CART and Variable Importance" alt="Decision Tree using CART and Variable Importance" style="display: block; margin: auto;" />
+>>>>>>> b0a1a51cfa0b64d410ce9a86ff915fe96bbf75ad
 
 ```r
 # Estimates
