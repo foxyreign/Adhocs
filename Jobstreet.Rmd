@@ -1,9 +1,13 @@
 ---
-Title: Data Mining and Scientist Salary Estimates in the Philippines
+Title: "Data Mining and Scientist Salary Estimates in the Philippines"
 author: "Adrian Cuyugan"
 output:
+  pdf_document:
+    fig_caption: yes
+    toc: yes
   html_document:
     fig_caption: yes
+    keep_md: yes
     number_sections: yes
     toc: yes
 ---
@@ -72,7 +76,7 @@ scientist <- subset(df, Position == "Data Scientist")
 
 As expected, Data Scientists have a higher expected salary although this is so dispersed that even if I compare these two using a t-test assuming heterodastic distribution, there is a significant difference between the averages expected salaries of the two positions. 
 
-```{r Distribution, warning=FALSE, message=FALSE, fig.cap="Distribution of Expected Salaries", fig.align='center'}
+```{r Distribution, warning=FALSE, message=FALSE, fig.cap="Distribution of Expected Salaries"}
 require(ggplot2)
 require(scales)
 
@@ -103,7 +107,7 @@ The intercept is not included in the model because I want to see the contrast be
 The regression output coefficients are interpreted as follows:
 $$y = \beta_{0}(12,934.9) + \beta_{1}(3,336.3) + \beta_{2}$$
 
-```{r Regression, warning=FALSE, message=FALSE, fig.align='center', fig.cap="Linear Regression Estimates and Diagnostics"}
+```{r Regression, warning=FALSE, message=FALSE, fig.cap="Scatter plot of Expected Salaries with Years of Experience",fig.cap="Regression and Diagnostics"}
 # Estimate coefficients of linear regression model
 summary(lm(Expected.Salary ~ Experience + Position-1, data=df))
 
@@ -126,7 +130,7 @@ Information Gain is used to divide the nodes based on weighted average entropy a
 
 Looking at the estimated salaries from the printed tree, applicants who have years of experience lower than 1.5 are approximately expecting 17,000 PHP. While does that applied for Data Mining jobs with 6.5 years of experience are expecting 66,000 pesos.
 
-```{r CART, warning=FALSE, message=FALSE, fig.align='center', fig.cap="Decision Tree using CART and Variable Importance"}
+```{r CART, warning=FALSE, message=FALSE, fig.cap="Decision Tree using CART and Variable Importance"}
 require(rpart)
 require(rattle)
 
