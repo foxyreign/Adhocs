@@ -1,0 +1,123 @@
+---
+output: html_document
+---
+
+# Motivation
+
+As I am going back to the Philippines to pursue further studies in Statistics, it intrigues me if Data Mining and Data Science is catching up. I am seeing some positions in websites such as Jobstreet so as a data miner, I extracted the relevant job openings that are related to the key phrases:
+* __Data Mining__; and
+* __Data Scientist__.
+
+These may look too specific but this is just a quick draft, anyway. Also, I did not include __Data Analyst__ as this scopes a broader job scope diversity than the two mentioned. 
+
+The result of the models should not be used to provide recommendation as this data the is collected using a convenience sample without performing accuracy tests, only k-fold cross validations against the training set when CART is used.
+
+# Data set
+
+Also, the data is collected manually by looking at these positions active today, 22 May, 2015, because of an assumption that the data set is relatively small as less than 30 positions returned. Pre-processing is done externally, in Excel, to remove currency prefix, PHP and text in experience, etc.
+
+```{r Data set, warning=FALSE, message=FALSE}
+library(RCurl)
+jobstreet <- getURL("https://raw.githubusercontent.com/foxyreign/Adhocs/master/Jobstreet.csv", ssl.verifypeer=0L, followlocation=1L) # Load dataset
+writeLines(jobstreet, "Jobstreet.csv")
+df <- read.csv('Jobstreet.csv', head=T, sep=",") # Load dataset
+df <- na.omit(df) # Exclude missing data
+
+summary(df) # Summarize
+```
+
+As mentioned, there are only approximately 120 job applicants which applied for these two grouped positions. Since the data does not mention if an applicant applied for more than one position, let's us assume that these are distinct records of applicants per position and/or position group, Data Mining and Data Scientist.
+
+## Variables
+
+1. **Expected.Salary** - numerical. The expected salary of each applicant based on their profile.
+2. **Experience** - ordinal but treated as numerical for easier interpretation in the later algorithms used. This is the years of work experience of the applicant.
+4. **Education** - categorical. This is labelled as:
+  * 1 - Secondary School
+  * 2 - Bachelor Degree
+  * 3 - Post Graduate Diploma
+  * 4 - Professional Degree
+3. **Specialization** - categorical; not used in this analysis. 
+4. **Position** - categorical.
+5. **Education.Group** - categorical. Additional variable to bin the years of experience.
+
+```{r Prepare data, warning=FALSE}
+# Categorize education variable
+df$Education <- factor(df$Education, levels = c(1,2,3,4), 
+                       labels=(c("Secondary Sch", "Bach Degree", 
+                                 "Post Grad Dip", "Prof Degree")))
+
+# Bin years of experience
+df$Experience.Group <- ifelse(df$Experience < 3, "3 Years", 
+                              ifelse(df$Experience < 5, "5 Years",
+                                     ifelse(df$Experience < 10, "10 Years", "+10 Years")))
+df$Experience.Group <- factor(df$Experience.Group, 
+                              levels=c("3 Years", "5 Years", "10 Years", "+10 Years"))
+```
+
+# Distribution
+
+As expected, Data Scientists have a higher expected salary although this is so dispersed that if I compare these two using a t-test assuming heterodastic distribution, there is a significant difference between the averages of two positions. 
+
+```{r Distribution, warning=FALSE, message=FALSE}
+require(ggplot2)
+require(scales)
+
+# Boxplot
+ggplot(df, aes(x=factor(0), y=Expected.Salary, fill=Experience.Group)) + 
+  facet_wrap(~Position) + geom_boxplot() + xlab(NULL) + 
+  scale_y_continuous(labels = comma) + 
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        legend.position="bottom")
+
+# T-test
+t.test(Expected.Salary ~ Position, paired = FALSE, data = df)
+```
+
+Come on fellow data enthusiasts, you should do better than this!
+
+# Regression
+
+The intercept is not included in the model because I want to see the contrast between Data Mining and Data Scientist. Besides, though the model shows significant value but when doing diagnostics, linear approach is not appropriate because the data is not random and depicts a funnel shape based on their errors.
+
+The regression output coefficients are interpreted as follows:
+$$y = \beta_{0}(12,934.9) + \beta_{1}(3,336.3) + \beta_{2}$$
+
+```{r Regression, warning=FALSE, message=FALSE}
+# Estimate coefficients of linear regression model
+summary(lm(Expected.Salary ~ Experience + Position-1, data=df))
+
+# Diagnose LM
+par(mfrow=c(1,2))
+plot(lm(Expected.Salary ~ Experience + Position-1, data=df), c(1,2))
+```
+
+# CART
+
+Information Gain is used to divide the nodes based on weighted average entropy as linear regression does not do well with the data set. Of course, years of experience is more influential than the position. 
+
+Looking at the estimated salaries from the printed tree, applicants who have years of experience lower than 1.5 are approximately expecting 17,000 PHP. While does that applied for Data Mining jobs with 6.5 years of experience are expecting 66,000 pesos.
+
+```{r CART, warning=FALSE, message=FALSE}
+require(rpart)
+require(rattle)
+
+cart <- rpart(formula = Expected.Salary ~ Experience + Position, 
+              data = df, 
+              parms = list(split = "information"), # Uses information gain
+              model = T) # Retains model information
+
+# Plot tree
+layout(matrix(c(1,2,3,4), nrow = 1, ncol = 2, byrow = TRUE), widths=c(1.5,2.5)) 
+barplot(cart$variable.importance, 
+        cex.names = 0.6, cex.axis = 0.5,
+        sub = "Variable Importance") 
+fancyRpartPlot(cart, main=NULL, sub=NULL)
+
+# Estimates
+print(cart); printcp(cart)
+```
+
+Again, fellow data miners and data scientists, ask for more! You do not realize your worth with the current demand of people who can understand data.
