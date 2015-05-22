@@ -1,12 +1,12 @@
 ---
+Title: Data Mining and Scientist Salary Estimates in the Philippines
+author: Adrian Cuyugan
 output: html_document
 ---
 
 # Motivation
 
-As I am going back to the Philippines to pursue further studies in Statistics, it intrigues me if Data Mining and Data Science is catching up. I am seeing some positions in websites such as Jobstreet so as a data miner, I extracted the relevant job openings that are related to the key phrases:
-* __Data Mining__; and
-* __Data Scientist__.
+As I am going back to the Philippines to pursue further studies in Statistics, it intrigues me if Data Mining and Data Science is catching up. I am seeing some positions in websites such as Jobstreet so as a data miner, I extracted the relevant job openings that are related to the key phrases:__Data Mining__ and __Data Scientist__.
 
 These may look too specific but this is just a quick draft, anyway. Also, I did not include __Data Analyst__ as this scopes a broader job scope diversity than the two mentioned. 
 
@@ -85,7 +85,7 @@ The intercept is not included in the model because I want to see the contrast be
 The regression output coefficients are interpreted as follows:
 $$y = \beta_{0}(12,934.9) + \beta_{1}(3,336.3) + \beta_{2}$$
 
-```{r Regression, warning=FALSE, message=FALSE}
+```{r Regression, warning=FALSE, message=FALSE, fig.align='center', fig.cap="Linear Regression Estimates and Diagnostics"}
 # Estimate coefficients of linear regression model
 summary(lm(Expected.Salary ~ Experience + Position-1, data=df))
 
@@ -100,7 +100,7 @@ Information Gain is used to divide the nodes based on weighted average entropy a
 
 Looking at the estimated salaries from the printed tree, applicants who have years of experience lower than 1.5 are approximately expecting 17,000 PHP. While does that applied for Data Mining jobs with 6.5 years of experience are expecting 66,000 pesos.
 
-```{r CART, warning=FALSE, message=FALSE}
+```{r CART, warning=FALSE, message=FALSE, fig.align='center', fig.cap="Decision Tree using CART and Variable Importance"}
 require(rpart)
 require(rattle)
 
