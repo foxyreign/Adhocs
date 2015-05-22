@@ -13,6 +13,9 @@ df <- na.omit(df) # Exclude missing data
 
 summary(df) # Summarize
 
+# Drop variables
+df <- df[, !(colnames(df) %in% c("Education","Specialization"))]
+
 # Categorize education variable
 df$Education <- factor(df$Education, levels = c(1,2,3,4), 
                        labels=(c("Secondary Sch", "Bach Degree", 
@@ -25,6 +28,10 @@ df$Experience.Group <- ifelse(df$Experience < 3, "3 Years",
 df$Experience.Group <- factor(df$Experience.Group, 
                               levels=c("3 Years", "5 Years", "10 Years", "+10 Years"))
 
+# Subsets positions
+mining <- subset(df, Position == "Data Mining")
+scientist <- subset(df, Position == "Data Scientist")
+
 # Plot boxplot
 ggplot(df, aes(x=factor(0), y=Expected.Salary, fill=Experience.Group)) + 
   facet_wrap(~Position) + geom_boxplot() + xlab(NULL) + 
@@ -36,12 +43,15 @@ ggplot(df, aes(x=factor(0), y=Expected.Salary, fill=Experience.Group)) +
 
 t.test(Expected.Salary ~ Position, paired = FALSE, data = df)
 
-# Plot scatter plos
+# Plot scatter plot
 ggplot(df, aes(x=Experience, y=Expected.Salary)) + 
   geom_point(aes(col=Experience.Group)) + 
   facet_wrap(~Position) + 
+  scale_y_continuous(labels = comma) + 
   stat_smooth(method="lm", fullrange = T) + 
   theme(legend.position="bottom")
+
+c(median(mining$Expected.Salary), median(scientist$Expected.Salary))
 
 # Estimate coefficients of linear regression model
 summary(lm(Expected.Salary ~ Experience + Position - 1, data=df))
