@@ -151,7 +151,6 @@ c(citation(),
   citation("knitr"),
   citation("arules"),
   citation("arulesViz"),
-  citation("knitcitations"), 
   citation("rpart"), 
   citation("rattle"), 
   citation("tm"))
