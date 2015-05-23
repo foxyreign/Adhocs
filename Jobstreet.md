@@ -6,13 +6,13 @@ As I am going back to the Philippines to pursue further studies in Statistics, i
 * __Data Mining__; and
 * __Data Scientist__.
 
-These may look too specific but this is just a quick draft, anyway. Also, I did not include __Data Analyst__ as this scopes a broader job scope diversity than the two mentioned not perform any intensive text extraction from Jobstreet.
+These may look too specific but this is just a quick draft, anyway. Also, I did not include __Data Analyst__ as this scopes a broader job scope diversity than the two mentioned. Also any intensive text extraction using basic Information Retrieval methods is not used .
 
 **Warning:** The result of the models should not be used to provide recommendations as data the is collected using a convenience sample without performing accuracy tests, only k-fold cross validations against the training set when CART is used.
 
 # Data set
 
-The data is collected manually by searching for relevant job openings active today, 22 May, 2015. I have an assumption that that the data set is relatively small, and so less than 30 positions returned. Pre-processing is done externally, in Excel, to remove currency prefix, *i.e.* PHP and text in experience, etc.
+The data is collected manually by searching for relevant job openings active today, 22 May, 2015. I have an assumption that that the data set is relatively small, and so less than 30 positions is returned. Pre-processing is done externally, in Excel, to remove currency prefix, *i.e.* PHP and text in experience, etc.
 
 
 ```r
@@ -83,7 +83,7 @@ scientist <- subset(df, Position == "Data Scientist")
 
 # Distribution
 
-As expected, Data Scientists have a higher expected salary although this is so dispersed that even if I compare these two using a t-test assuming heterodastic distribution, there is a significant difference between the averages expected salaries of the two positions. 
+As expected, Data Scientists have a higher expected salary although this is so dispersed that even if I compare these two using a t-test assuming heteroskedastic distribution, there is a significant difference between the averages expected salaries of the two positions. 
 
 
 ```r
@@ -100,11 +100,7 @@ ggplot(df, aes(x=factor(0), y=Expected.Salary, fill=Experience.Group)) +
         legend.position="bottom")
 ```
 
-<<<<<<< HEAD
 ![Distribution of Expected Salaries](Jobstreet_files/figure-html/Distribution-1.png) 
-=======
-<img src="Jobstreet_files/figure-html/Distribution-1.png" title="Distribution of Expected Salaries" alt="Distribution of Expected Salaries" style="display: block; margin: auto;" />
->>>>>>> b0a1a51cfa0b64d410ce9a86ff915fe96bbf75ad
 
 ```r
 # T-test
@@ -135,11 +131,11 @@ c(median(mining$Expected.Salary), median(scientist$Expected.Salary))
 ## [1] 25000 30000
 ```
 
-Come on fellow data enthusiasts, you should do better than this! The difference of their medians is just 5,000 PHP. In my honest, these center values are way below based on the prospective demand of shortage of these people in the next 10 years.
+Come on fellow data enthusiasts, you should do better than this! The difference of their medians is just 5,000 PHP. In my honest opinion, these center values are way below based on the prospective demand of shortage of these people who can understand data in the next 10 years.
 
 # Regression
 
-The intercept is not included in the model because I want to see the contrast between Data Mining and Data Scientist although I already computed it beforehand. Besides, though the linear regressio model shows significant value $r_{adj}^{2}>0.80, p<0.05$ but when doing diagnostics, linear approach is not appropriate because the data is not random and depicts a funnel shape based on their errors.
+The intercept is not included in the model because I want to see the contrast between Data Mining and Data Scientist although I already computed it beforehand. Besides, though the linear regressio model shows significant value, $r_{adj}^{2}>0.80, p<0.05$, but when doing diagnostics, linear approach is not appropriate because the residual errors are not random and depict a funnel shape based on their errors.
 
 The regression output coefficients are interpreted as follows:
 $$y = \beta_{0}(12,934.9) + \beta_{1}(3,336.3) + \beta_{2}$$
@@ -182,11 +178,7 @@ ggplot(df, aes(x=Experience, y=Expected.Salary)) +
   theme(legend.position="bottom")
 ```
 
-<<<<<<< HEAD
 ![Regression and Diagnostics](Jobstreet_files/figure-html/Regression-1.png) 
-=======
-<img src="Jobstreet_files/figure-html/Regression-1.png" title="Regression and Diagnostics" alt="Regression and Diagnostics" style="display: block; margin: auto;" />
->>>>>>> b0a1a51cfa0b64d410ce9a86ff915fe96bbf75ad
 
 ```r
 # Diagnose LM
@@ -194,17 +186,13 @@ par(mfrow=c(1,2))
 plot(lm(Expected.Salary ~ Experience + Position-1, data=df), c(1,2))
 ```
 
-<<<<<<< HEAD
 ![Regression and Diagnostics](Jobstreet_files/figure-html/Regression-2.png) 
-=======
-<img src="Jobstreet_files/figure-html/Regression-2.png" title="Regression and Diagnostics" alt="Regression and Diagnostics" style="display: block; margin: auto;" />
->>>>>>> b0a1a51cfa0b64d410ce9a86ff915fe96bbf75ad
 
 # CART
 
 Information Gain is used to divide the nodes based on weighted average entropy as linear regression does not do well with the data set. Of course, years of experience is more influential than the position. 
 
-Looking at the estimated salaries from the printed tree, applicants who have years of experience lower than 1.5 are approximately expecting 17,000 PHP. While does that applied for Data Mining jobs with 6.5 years of experience are expecting 66,000 pesos.
+Looking at the estimated salaries from the printed tree, applicants who have years of experience lower than 1.5 are approximately expecting 17,000 PHP. While those who applied for Data Mining jobs with more than 6.5 years of experience are expecting 66,000 pesos on average.
 
 
 ```r
@@ -224,11 +212,7 @@ barplot(cart$variable.importance,
 fancyRpartPlot(cart, main=NULL, sub=NULL)
 ```
 
-<<<<<<< HEAD
 ![Decision Tree using CART and Variable Importance](Jobstreet_files/figure-html/CART-1.png) 
-=======
-<img src="Jobstreet_files/figure-html/CART-1.png" title="Decision Tree using CART and Variable Importance" alt="Decision Tree using CART and Variable Importance" style="display: block; margin: auto;" />
->>>>>>> b0a1a51cfa0b64d410ce9a86ff915fe96bbf75ad
 
 ```r
 # Estimates
@@ -268,12 +252,12 @@ print(cart); printcp(cart)
 ## n= 123 
 ## 
 ##         CP nsplit rel error  xerror    xstd
-## 1 0.254780      0   1.00000 1.00888 0.19245
-## 2 0.110361      1   0.74522 0.81057 0.14709
-## 3 0.033563      2   0.63486 0.77285 0.13292
-## 4 0.031769      3   0.60130 0.76228 0.13052
-## 5 0.020333      4   0.56953 0.74207 0.12969
-## 6 0.010000      5   0.54919 0.70258 0.12366
+## 1 0.254780      0   1.00000 1.00969 0.19188
+## 2 0.110361      1   0.74522 0.76324 0.13813
+## 3 0.033563      2   0.63486 0.74060 0.12646
+## 4 0.031769      3   0.60130 0.74881 0.12843
+## 5 0.020333      4   0.56953 0.71838 0.12674
+## 6 0.010000      5   0.54919 0.69539 0.11999
 ```
 
 Again, fellow data miners and data scientists, ask for more! You do not realize your worth with the current demand of people who can understand data.
