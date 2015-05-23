@@ -3,6 +3,12 @@ title: "Data Mining and Data Scientist Salary Estimates \n in the Philippines"
 author: "Adrian Cuyugan"
 date: "Friday, 22 May, 2015"
 output:
+<<<<<<< HEAD
+=======
+  pdf_document:
+    fig_caption: yes
+    toc: yes
+>>>>>>> e032dc6075b5cc911fcc3c0897294a33114cef08
   html_document:
     fig_caption: yes
     keep_md: yes

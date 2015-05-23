@@ -9,7 +9,11 @@ As I am going back to the Philippines to pursue further studies in Statistics, i
 * __Data Mining__; and
 * __Data Scientist__.
 
+<<<<<<< HEAD
 These may look too specific but this is just a quick draft, anyway. Also, I did not include __Data Analyst__ as this scopes a broader job scope diversity than the two mentioned. Also any intensive text extraction using basic Information Retrieval methods is not used.
+=======
+These may look too specific but this is just a quick draft, anyway. Also, I did not include __Data Analyst__ as this scopes a broader job scope diversity than the two mentioned. Also any intensive text extraction using basic Information Retrieval methods is not used .
+>>>>>>> e032dc6075b5cc911fcc3c0897294a33114cef08
 
 **Warning:** The result of the models should not be used to provide recommendations as data the is collected using a convenience sample without performing accuracy tests, only k-fold cross validations against the training set when CART is used.
 
