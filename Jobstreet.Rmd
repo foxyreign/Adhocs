@@ -1,37 +1,36 @@
 ---
-Title: "Data Mining and Scientist Salary Estimates in the Philippines"
+title: "Data Mining and Data Scientist Salary Estimates \n in the Philippines"
 author: "Adrian Cuyugan"
+date: "Friday, 22 May, 2015"
 output:
-  pdf_document:
-<<<<<<< HEAD
-    fig_caption: yes
-=======
->>>>>>> b0a1a51cfa0b64d410ce9a86ff915fe96bbf75ad
-    toc: yes
   html_document:
     fig_caption: yes
     keep_md: yes
     number_sections: yes
     toc: yes
+  pdf_document:
+    fig_caption: yes
+    toc: yes
 ---
 
 # Motivation
 
-As I am going back to the Philippines to pursue further studies in Statistics, it intrigues me if Data Mining and Data Science are catching up. I am seeing some positions in jobsearch websites such as Jobstreet so as a data miner, I extracted the relevant job openings that are related to the key phrases:
+As I am going back to the Philippines to pursue further studies in Statistics, it intrigues me if Data Mining and Data Science are catching up. I am seeing some positions in jobsearch websites such as [Jobstreet](http://jobstreet.com) so as a data miner, I extracted the relevant job openings that are related to the key phrases:
 * __Data Mining__; and
 * __Data Scientist__.
 
-These may look too specific but this is just a quick draft, anyway. Also, I did not include __Data Analyst__ as this scopes a broader job scope diversity than the two mentioned not perform any intensive text extraction from Jobstreet.
+These may look too specific but this is just a quick draft, anyway. Also, I did not include __Data Analyst__ as this scopes a broader job scope diversity than the two mentioned. Also any intensive text extraction using basic Information Retrieval methods is not used.
 
 **Warning:** The result of the models should not be used to provide recommendations as data the is collected using a convenience sample without performing accuracy tests, only k-fold cross validations against the training set when CART is used.
 
 # Data set
 
-The data is collected manually by searching for relevant job openings active today, 22 May, 2015. I have an assumption that that the data set is relatively small, and so less than 30 positions returned. Pre-processing is done externally, in Excel, to remove currency prefix, *i.e.* PHP and text in experience, etc.
+The data is collected manually by searching for relevant job openings active today, 22 May, 2015. I have an assumption that that the data set is relatively small, and so less than 30 positions is returned. Pre-processing is done externally, in Excel, to remove currency prefix, *i.e.* PHP and text in experience, etc.
 
 ```{r Data set, warning=FALSE, message=FALSE}
 library(RCurl)
-jobstreet <- getURL("https://raw.githubusercontent.com/foxyreign/Adhocs/master/Jobstreet.csv", ssl.verifypeer=0L, followlocation=1L) # Load dataset
+jobstreet <- getURL("https://raw.githubusercontent.com/foxyreign/Adhocs/master/Jobstreet.csv", 
+                    ssl.verifypeer=0L, followlocation=1L) # Load dataset
 writeLines(jobstreet, "Jobstreet.csv")
 df <- read.csv('Jobstreet.csv', head=T, sep=",") # Load dataset
 df <- na.omit(df) # Exclude missing data
@@ -77,7 +76,7 @@ scientist <- subset(df, Position == "Data Scientist")
 
 # Distribution
 
-As expected, Data Scientists have a higher expected salary although this is so dispersed that even if I compare these two using a t-test assuming heterodastic distribution, there is a significant difference between the averages expected salaries of the two positions. 
+As expected, Data Scientists have a higher expected salary although this is so dispersed that even if I compare these two using a t-test assuming heteroskedastic distribution, there is a significant difference between the averages expected salaries of the two positions. 
 
 ```{r Distribution, warning=FALSE, message=FALSE, fig.cap="Distribution of Expected Salaries"}
 require(ggplot2)
@@ -101,11 +100,11 @@ t.test(Expected.Salary ~ Position, paired = FALSE, data = df)
 c(median(mining$Expected.Salary), median(scientist$Expected.Salary))
 ```
 
-Come on fellow data enthusiasts, you should do better than this! The difference of their medians is just 5,000 PHP. In my honest, these center values are way below based on the prospective demand of shortage of these people in the next 10 years.
+Come on fellow data enthusiasts, you should do better than this! The difference of their medians is just 5,000 PHP. In my honest opinion, these center values are way below based on the prospective demand of shortage of these people who can understand data in the next 10 years.
 
 # Regression
 
-The intercept is not included in the model because I want to see the contrast between Data Mining and Data Scientist although I already computed it beforehand. Besides, though the linear regressio model shows significant value $r_{adj}^{2}>0.80, p<0.05$ but when doing diagnostics, linear approach is not appropriate because the data is not random and depicts a funnel shape based on their errors.
+The intercept is not included in the model because I want to see the contrast between Data Mining and Data Scientist although I already computed it beforehand. Besides, though the linear regressio model shows significant value, $r_{adj}^{2}>0.80, p<0.05$, but when doing diagnostics, linear approach is not appropriate because the residual errors are not random and depict a funnel shape based on their errors.
 
 The regression output coefficients are interpreted as follows:
 $$y = \beta_{0}(12,934.9) + \beta_{1}(3,336.3) + \beta_{2}$$
@@ -131,7 +130,7 @@ plot(lm(Expected.Salary ~ Experience + Position-1, data=df), c(1,2))
 
 Information Gain is used to divide the nodes based on weighted average entropy as linear regression does not do well with the data set. Of course, years of experience is more influential than the position. 
 
-Looking at the estimated salaries from the printed tree, applicants who have years of experience lower than 1.5 are approximately expecting 17,000 PHP. While does that applied for Data Mining jobs with 6.5 years of experience are expecting 66,000 pesos.
+Looking at the estimated salaries from the printed tree, applicants who have years of experience lower than 1.5 are approximately expecting 17,000 PHP. While those who applied for Data Mining jobs with more than 6.5 years of experience are expecting 66,000 pesos on average.
 
 ```{r CART, warning=FALSE, message=FALSE, fig.cap="Decision Tree using CART and Variable Importance"}
 require(rpart)
